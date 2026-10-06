@@ -30,3 +30,6 @@ dist-ssr
 supabase/functions/.env
 supabase/.temp
 supabase/.branches
+
+# Personal Claude Code settings
+.claude/settings.local.json
