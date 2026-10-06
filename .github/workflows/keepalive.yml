@@ -1,0 +1,14 @@
+# Keeps the public demo current through the judging period (until mid-December 2026):
+# slides the demo study log to "now" and keeps the free Supabase project from pausing.
+name: demo keepalive
+on:
+  schedule:
+    - cron: "0 18 * * *" # 03:00 JST every day
+  workflow_dispatch:
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -fsS -X POST "${{ secrets.SUPABASE_URL }}/functions/v1/demo-refresh" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" -H "content-type: application/json" -d '{}'

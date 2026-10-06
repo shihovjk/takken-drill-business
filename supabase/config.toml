@@ -1,0 +1,13 @@
+# Supabase CLI settings for this project (used by `supabase start` / `supabase functions deploy`)
+project_id = "takken-drill-business"
+
+[auth]
+site_url = "http://localhost:5180"
+additional_redirect_urls = ["http://localhost:5180", "https://biz.takken-drill.com"]
+
+# PayPal calls these without a Supabase login; they verify PayPal's signature / a cron secret instead
+[functions.paypal-webhook]
+verify_jwt = false
+
+[functions.demo-refresh]
+verify_jwt = false

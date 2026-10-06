@@ -1,0 +1,4 @@
+{
+  "nodeModulesDir": "none",
+  "exclude": ["_shared/core/core.test.ts"]
+}
