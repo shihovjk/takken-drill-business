@@ -4,9 +4,26 @@
     {
       "name": "business",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["vite", "--port", "5180"],
+      "runtimeArgs": [
+        "vite",
+        "--port",
+        "5180"
+      ],
       "port": 5180,
       "autoPort": true
+    },
+    {
+      "name": "business-offline",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "VITE_SUPABASE_URL=",
+        "VITE_SUPABASE_ANON_KEY=",
+        "npx",
+        "vite",
+        "--port",
+        "5181"
+      ],
+      "port": 5181
     }
   ]
 }
