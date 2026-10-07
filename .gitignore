@@ -33,3 +33,6 @@ supabase/.branches
 
 # Personal Claude Code settings
 .claude/settings.local.json
+
+# Hackathon submission notes (local only)
+SUBMISSION.md

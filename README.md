@@ -12,6 +12,29 @@ Takken Drill for Business changes the deal:
 
 An AI reads each employee's study log and proposes who gets what, with written reasons. An HR admin approves with one click, and the money goes **straight from the company's PayPal Business account to the employee's PayPal**. The app never holds the money.
 
+## For judges: try the live demo
+
+**Live demo:** https://takken-drill-business.shihovjk.workers.dev (real Claude API, PayPal **sandbox**; all people are fictional). Switch the language with **EN** in the header.
+
+| Role | Email | Password |
+|---|---|---|
+| HR admin | `admin@demo.takken-drill.com` | `demoiijyan` |
+| Employee A (Misaki Suzuki: studied genuinely, passed) | `e02@demo.takken-drill.com` | same |
+| Employee B (Kenta Sato: memorized answers) | `e01@demo.takken-drill.com` | same |
+
+What to try:
+
+1. **Admin:** press **Judge with AI**. Claude reads 25 employees' study logs and returns an effort score, pass chance, flags and a proposed award for each, plus a company report.
+2. **Admin:** open an employee row in the grid (AG Grid) to read the AI's reasons. Then **Approve & pay with PayPal**, **Edit amount**, **Send follow-up** or **Confirm self-pay**.
+3. **Admin:** after paying, the status changes when PayPal's payout webhook arrives. The payout goes to a sandbox personal account.
+4. **Employee:** study in the drill. Every answer is recorded and feeds the next judgement. The **支給 (Award)** tab shows the confirmed award, the AI's reasons, and **Log in with PayPal** to register where money is received.
+
+Notes:
+
+- The demo study log is moved to "now" every day, so the 8-week window always has data.
+- The AI runs only when the button is pressed, and at most 20 times a day for the demo company. If the limit is reached, try again the next day (JST).
+- To run everything locally without any account, see [Offline demo](#offline-demo-no-accounts-needed).
+
 ## What the AI actually does (at runtime)
 
 The only inputs are **accuracy** and **seconds per question**, over the last 8 weeks. Rules on those numbers are easy to game; the AI judges the *combination* and the *change over time*:
@@ -52,7 +75,7 @@ Payment methods are swappable ([`supabase/functions/_shared/payout/`](supabase/f
 ## Architecture
 
 ```
-React + TypeScript + AG Grid (Vite, Cloudflare Pages)
+React + TypeScript + AG Grid (Vite, Cloudflare Workers static assets)
    │  Supabase Auth (email + password, invitations)
    │  Postgres with row-level security (company isolation, consent before any answer is recorded)
    ▼
@@ -105,7 +128,7 @@ npm run dev   # http://localhost:5180
    - **This app's REST app:** enable *Log in with PayPal* (email + PayPal account ID). Create a product and a monthly plan, and set `PAYPAL_PLAN_ID`. Add a webhook to `…/functions/v1/paypal-webhook` for `BILLING.SUBSCRIPTION.*` and `PAYMENT.SALE.COMPLETED`, and set `PAYPAL_WEBHOOK_ID`.
    - **The company's REST app:** this can be a second sandbox business account with *Payouts* enabled. Enter its client ID and secret in the app under **PayPal**. The payout webhook is registered automatically.
 5. **Demo data.** Copy `.env.example` to `.env`, fill it in, and run `node scripts/seed.ts --supabase`. `DEMO_PAYEE_EMAIL` is a sandbox *personal* account that receives the demo payouts.
-6. **Frontend.** Set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` and `VITE_PAYPAL_CLIENT_ID`, then run `npm run build`. Deploy `dist/` to Cloudflare Pages.
+6. **Frontend.** Set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` and `VITE_PAYPAL_CLIENT_ID`, then run `npm run build` and deploy `dist/` as static files (the live demo uses Cloudflare Workers connected to this repository; build command `npm run build`, output `dist`, `NODE_VERSION=22`).
 
 ### Tests
 
