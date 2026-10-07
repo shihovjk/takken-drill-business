@@ -39,17 +39,18 @@ export default function EmployeeGrid({ rows, filter, onOpen, onSelect }: {
   const cols = useMemo<ColDef<EmployeeRow>[]>(() => [
     {
       // The status sits next to the name, so it is clear who can be ticked for payment
-      colId: "name", headerName: t("colName"), pinned: "left", width: 230,
+      colId: "name", headerName: t("colName"), pinned: "left", width: 260,
       valueGetter: (p) => pick(p.data!.name, p.data!.nameEn),
       cellRenderer: (p: ICellRendererParams<EmployeeRow>) => {
         const st = p.data!.award?.status ?? "none";
         return (
           <div className="cell-name">
-            <b>
-              {pick(p.data!.name, p.data!.nameEn)} <span className={`badge b-${st}`}>{t(`st_${st}` as never)}</span>
-              {PAYABLE.includes(st) && !p.data!.payeeReady && <> <span className="badge b-none">{t("noPayeeShort")}</span></>}
-            </b>
-            <span>{pick(p.data!.dept, p.data!.deptEn)}</span>
+            <div className="cell-name-top">
+              <b>{pick(p.data!.name, p.data!.nameEn)}</b>
+              <span className={`badge b-${st}`}>{t(`st_${st}` as never)}</span>
+              {PAYABLE.includes(st) && !p.data!.payeeReady && <span className="badge b-none">{t("noPayeeShort")}</span>}
+            </div>
+            <span className="cell-dept">{pick(p.data!.dept, p.data!.deptEn)}</span>
           </div>
         );
       },
