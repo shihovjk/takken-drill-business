@@ -7,8 +7,11 @@ import EmployeeGrid, { type Filter } from "./EmployeeGrid";
 
 const PENDING = ["proposed", "approved", "processing"];
 
-export default function Dashboard({ backend, data, refresh, notify }: {
-  backend: Backend; data: AdminData; refresh: () => Promise<void>; notify: (m: string) => void;
+// The shared demo company pays at most this many people per click (see supabase/functions/payout)
+const DEMO_MAX = 3;
+
+export default function Dashboard({ backend, data, isDemo, refresh, notify }: {
+  backend: Backend; data: AdminData; isDemo: boolean; refresh: () => Promise<void>; notify: (m: string) => void;
 }) {
   const { t, pick, yen } = useI18n();
   const { rows, report, payouts, rules } = data;
@@ -38,6 +41,8 @@ export default function Dashboard({ backend, data, refresh, notify }: {
 
   // Approve (confirm the AI amount) and send the payout in one step
   const approveAndPay = async (ids: string[], edit?: { examFee: number; passBonus: number; note: string }) => {
+    // Check before approving, so nobody is left approved but unpaid
+    if (isDemo && ids.length > DEMO_MAX) { notify(t("demoMax")); return; }
     setBusy(true);
     try {
       await backend.confirm(ids, edit);
@@ -98,7 +103,9 @@ export default function Dashboard({ backend, data, refresh, notify }: {
             ))}
           </div>
           <span className="spacer" />
-          {selected.length > 0 && <span className="muted">{selected.length}{t("selected")}</span>}
+          {selected.length > 0
+            ? <span className="muted">{selected.length}{t("selected")}</span>
+            : <span className="muted" style={{ fontSize: 12, maxWidth: 420 }}>{t("selectHint")}</span>}
           <button className="btn pay" disabled={!selected.length || busy} onClick={() => approveAndPay(selected)}>{t("bulkApprove")}</button>
         </div>
         <EmployeeGrid rows={rows} filter={filter} onOpen={setOpenId} onSelect={setSelected} />

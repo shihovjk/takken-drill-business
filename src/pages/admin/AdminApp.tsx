@@ -32,7 +32,7 @@ export default function AdminApp({ backend, session, onSignOut }: { backend: Bac
       }} />
       <main className="page">
         {!data ? <p className="muted">Loading…</p>
-          : tab === "dashboard" ? <Dashboard backend={backend} data={data} refresh={refresh} notify={notify} />
+          : tab === "dashboard" ? <Dashboard backend={backend} data={data} isDemo={!!session.isDemo} refresh={refresh} notify={notify} />
           : tab === "rules" ? <RulesPage backend={backend} rules={data.rules} onSaved={() => { refresh(); notify(t("saved")); }} />
           : tab === "members" ? <MembersPage backend={backend} data={data} />
           : <PayPalPage backend={backend} data={data} notify={notify} />}

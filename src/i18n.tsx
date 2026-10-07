@@ -50,6 +50,8 @@ const D = {
   filterPaid: ["支払済", "Paid"],
   bulkApprove: ["選んだ社員を承認してPayPalで支払う", "Approve selected & pay with PayPal"],
   selected: ["人を選択中", " selected"],
+  selectHint: ["左端のチェックで「承認待ち」の社員を選ぶと押せます。要フォロー・自己負担の社員は、行を開いて1人ずつ判断します。", "Tick pending employees in the left column to use this. Open a row to decide on follow-up or self-pay cases one by one."],
+  demoMax: ["デモでは1回に3人まで支払えます。3人以下を選んでください。", "In the demo you can pay up to 3 employees at a time. Select 3 or fewer."],
   // Status
   st_none: ["未判定", "Not judged"],
   st_proposed: ["承認待ち", "Pending"],
