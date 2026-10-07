@@ -35,11 +35,18 @@ export default function EmployeeGrid({ rows, filter, onOpen, onSelect }: {
 
   const cols = useMemo<ColDef<EmployeeRow>[]>(() => [
     {
-      colId: "name", headerName: t("colName"), pinned: "left", width: 170,
+      // The status sits next to the name, so it is clear who can be ticked for payment
+      colId: "name", headerName: t("colName"), pinned: "left", width: 230,
       valueGetter: (p) => pick(p.data!.name, p.data!.nameEn),
-      cellRenderer: (p: ICellRendererParams<EmployeeRow>) => (
-        <div className="cell-name"><b>{pick(p.data!.name, p.data!.nameEn)}</b><span>{pick(p.data!.dept, p.data!.deptEn)}</span></div>
-      ),
+      cellRenderer: (p: ICellRendererParams<EmployeeRow>) => {
+        const st = p.data!.award?.status ?? "none";
+        return (
+          <div className="cell-name">
+            <b>{pick(p.data!.name, p.data!.nameEn)} <span className={`badge b-${st}`}>{t(`st_${st}` as never)}</span></b>
+            <span>{pick(p.data!.dept, p.data!.deptEn)}</span>
+          </div>
+        );
+      },
     },
     {
       colId: "time", headerName: t("colTime"), width: 105, type: "rightAligned",
@@ -76,11 +83,6 @@ export default function EmployeeGrid({ rows, filter, onOpen, onSelect }: {
       colId: "award", headerName: t("colAward"), width: 150, type: "rightAligned",
       valueGetter: (p) => (p.data!.award ? p.data!.award.examFee + p.data!.award.passBonus : null),
       valueFormatter: (p) => (p.value == null ? "—" : yen(p.value)),
-    },
-    {
-      colId: "status", headerName: t("colStatus"), width: 120,
-      valueGetter: (p) => p.data!.award?.status ?? "none",
-      cellRenderer: (p: ICellRendererParams<EmployeeRow>) => <span className={`badge b-${p.value}`}>{t(`st_${p.value}` as never)}</span>,
     },
   ], [t, pick, yen, lang]);
 
