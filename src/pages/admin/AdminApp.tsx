@@ -9,6 +9,7 @@ import PayPalPage from "./PayPalPage";
 import RulesPage from "./RulesPage";
 
 export type AdminData = { rows: EmployeeRow[]; report: Report | null; payouts: PayoutRecord[]; rules: AwardRules };
+export type Refresh = () => Promise<EmployeeRow[]>;
 
 export default function AdminApp({ backend, session, onSignOut }: { backend: Backend; session: Session; onSignOut: () => void }) {
   const { t, lang } = useI18n();
@@ -19,6 +20,7 @@ export default function AdminApp({ backend, session, onSignOut }: { backend: Bac
   const refresh = useCallback(async () => {
     const [rows, report, payouts, rules] = await Promise.all([backend.employees(), backend.report(), backend.payouts(), backend.rules()]);
     setData({ rows, report, payouts, rules });
+    return rows;
   }, [backend]);
   useEffect(() => { refresh(); }, [refresh]);
 

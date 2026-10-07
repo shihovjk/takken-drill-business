@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useI18n } from "../../i18n";
 import type { Backend, EmployeeRow } from "../../lib/types";
-import type { AdminData } from "./AdminApp";
+import type { AdminData, Refresh } from "./AdminApp";
 import DetailPanel from "./DetailPanel";
 import EmployeeGrid, { type Filter } from "./EmployeeGrid";
 
@@ -11,7 +11,7 @@ const PENDING = ["proposed", "approved", "processing"];
 const DEMO_MAX = 3;
 
 export default function Dashboard({ backend, data, isDemo, refresh, notify }: {
-  backend: Backend; data: AdminData; isDemo: boolean; refresh: () => Promise<void>; notify: (m: string) => void;
+  backend: Backend; data: AdminData; isDemo: boolean; refresh: Refresh; notify: (m: string) => void;
 }) {
   const { t, pick, yen } = useI18n();
   const { rows, report, payouts, rules } = data;
@@ -20,6 +20,8 @@ export default function Dashboard({ backend, data, isDemo, refresh, notify }: {
   const [openId, setOpenId] = useState<string | null>(null);
   const [progress, setProgress] = useState<[number, number] | null>(null);
   const [busy, setBusy] = useState(false);
+  // The outcome of the last payout stays on screen until closed (a toast is too easy to miss)
+  const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
 
   const kpi = useMemo(() => {
     const planned = rows.filter((r) => r.award && PENDING.includes(r.award.status)).reduce((s, r) => s + r.award!.examFee + r.award!.passBonus, 0);
@@ -42,18 +44,38 @@ export default function Dashboard({ backend, data, isDemo, refresh, notify }: {
   // Approve (confirm the AI amount) and send the payout in one step
   const approveAndPay = async (ids: string[], edit?: { examFee: number; passBonus: number; note: string }) => {
     // Check before approving, so nobody is left approved but unpaid
-    if (isDemo && ids.length > DEMO_MAX) { notify(t("demoMax")); return; }
+    if (isDemo && ids.length > DEMO_MAX) { setResult({ ok: false, text: t("demoMax") }); return; }
+    // Nobody is approved without a PayPal account to pay them to
+    const noPayee = rows.filter((r) => ids.includes(r.userId) && !r.payeeReady);
+    if (noPayee.length) {
+      setResult({ ok: false, text: pick(
+        `${noPayee.map((r) => r.name).join("、")}はPayPalの受け取り先が未登録のため、支払えません。本人が「支給」タブで登録すると支払えるようになります。`,
+        `${noPayee.map((r) => r.nameEn).join(", ")} cannot be paid yet: no PayPal account registered. They can register it in their Award tab.`) });
+      return;
+    }
     setBusy(true);
+    setResult(null);
     try {
       await backend.confirm(ids, edit);
       await refresh();
       const p = backend.pay(ids);
       await refresh(); // shows "paying…" while the payout is in flight
       await p;
-      await refresh();
-      notify(pick(`${ids.length}人への支払いが完了しました（PayPal）`, `Paid ${ids.length} employee(s) via PayPal`));
+      const after = await refresh();
+      const sent = after.filter((r) => ids.includes(r.userId) && r.award && ["processing", "paid", "exported"].includes(r.award.status));
+      const total = sent.reduce((s, r) => s + r.award!.examFee + r.award!.passBonus, 0);
+      const names = sent.map((r) => pick(r.name, r.nameEn)).join(pick("、", ", "));
+      setResult({ ok: true, text: pick(
+        `${names}（${sent.length}人）に、合計${yen(total)}をPayPalで送金しました。PayPalから完了の知らせが届くと「支払済」に変わります。`,
+        `Sent ${yen(total)} via PayPal to ${names} (${sent.length}). The status changes to "Paid" when PayPal confirms.`) });
       setSelected([]);
-    } catch (e) { notify(e instanceof Error ? e.message : String(e)); }
+      // PayPal confirms by webhook a few seconds later; refresh so "Paid" appears without a reload
+      setTimeout(refresh, 5000);
+      setTimeout(refresh, 15000);
+    } catch (e) {
+      await refresh();
+      setResult({ ok: false, text: pick("支払いできませんでした：", "Payment failed: ") + payError(e instanceof Error ? e.message : String(e), pick) });
+    }
     setBusy(false);
   };
 
@@ -106,8 +128,14 @@ export default function Dashboard({ backend, data, isDemo, refresh, notify }: {
           {selected.length > 0
             ? <span className="muted">{selected.length}{t("selected")}</span>
             : <span className="muted" style={{ fontSize: 12, maxWidth: 420 }}>{t("selectHint")}</span>}
-          <button className="btn pay" disabled={!selected.length || busy} onClick={() => approveAndPay(selected)}>{t("bulkApprove")}</button>
+          <button className="btn pay" disabled={!selected.length || busy} onClick={() => approveAndPay(selected)}>{busy ? t("paying") : t("bulkApprove")}</button>
         </div>
+        {result && (
+          <div className={`pay-result ${result.ok ? "ok" : "ng"}`} role="status">
+            <span>{result.ok ? "✓ " : "! "}{result.text}</span>
+            <button className="link" onClick={() => setResult(null)} aria-label={pick("閉じる", "Close")}>×</button>
+          </div>
+        )}
         <EmployeeGrid rows={rows} filter={filter} onOpen={setOpenId} onSelect={setSelected} />
       </section>
 
@@ -118,6 +146,15 @@ export default function Dashboard({ backend, data, isDemo, refresh, notify }: {
       )}
     </div>
   );
+}
+
+// Server messages (English) shown to the admin in their language
+function payError(msg: string, pick: (ja: string, en: string) => string) {
+  if (msg.startsWith("demo: up to")) return pick("デモでは1回に3人まで支払えます。", msg);
+  if (msg.includes("no employee has a PayPal account")) return pick("PayPalの受け取り先が登録されていない社員です。", msg);
+  if (msg.includes("nothing approved to pay")) return pick("支払える状態の社員がいません。", msg);
+  if (msg.includes("already being paid")) return pick("すでに支払い処理中です。", msg);
+  return pick(`${msg}（もう一度試すときは、行を開いて「PayPalで支払う」を押してください）`, `${msg} (to retry, open the row and press "Pay with PayPal")`);
 }
 
 export function matches(r: EmployeeRow, f: Filter) {

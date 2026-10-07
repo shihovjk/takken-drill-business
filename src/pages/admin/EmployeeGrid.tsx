@@ -24,6 +24,9 @@ const theme = themeQuartz.withParams({
   cellHorizontalPadding: 12,
 });
 
+// Who can be ticked for "approve & pay": pending, approved or a failed payout to retry, with a PayPal account
+const PAYABLE = ["proposed", "approved", "failed"];
+
 // Slow enough to read a 4-choice question is about a minute; under 20 s with high accuracy is suspicious
 const FAST = 20;
 
@@ -42,7 +45,10 @@ export default function EmployeeGrid({ rows, filter, onOpen, onSelect }: {
         const st = p.data!.award?.status ?? "none";
         return (
           <div className="cell-name">
-            <b>{pick(p.data!.name, p.data!.nameEn)} <span className={`badge b-${st}`}>{t(`st_${st}` as never)}</span></b>
+            <b>
+              {pick(p.data!.name, p.data!.nameEn)} <span className={`badge b-${st}`}>{t(`st_${st}` as never)}</span>
+              {PAYABLE.includes(st) && !p.data!.payeeReady && <> <span className="badge b-none">{t("noPayeeShort")}</span></>}
+            </b>
             <span>{pick(p.data!.dept, p.data!.deptEn)}</span>
           </div>
         );
@@ -95,7 +101,7 @@ export default function EmployeeGrid({ rows, filter, onOpen, onSelect }: {
         defaultColDef={{ sortable: true, resizable: true, suppressMovable: true }}
         getRowId={(p) => p.data.userId}
         rowHeight={56}
-        rowSelection={{ mode: "multiRow", isRowSelectable: (n) => ["proposed", "approved"].includes(n.data?.award?.status ?? ""), headerCheckbox: true }}
+        rowSelection={{ mode: "multiRow", isRowSelectable: (n) => PAYABLE.includes(n.data?.award?.status ?? "") && !!n.data?.payeeReady, headerCheckbox: true }}
         selectionColumnDef={{ pinned: "left", width: 48 }}
         onSelectionChanged={(e) => onSelect(e.api.getSelectedRows().map((r) => r.userId))}
         onCellClicked={(e) => { if (e.column.getColId() !== "ag-Grid-SelectionColumn") onOpen(e.data!.userId); }}
