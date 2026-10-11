@@ -36,3 +36,6 @@ supabase/.branches
 
 # Hackathon submission notes (local only)
 SUBMISSION.md
+
+# Demo video build (local only)
+video/

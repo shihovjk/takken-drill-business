@@ -6,6 +6,8 @@
   VIEWS.plans = VIEWS.home;
   VIEWS.account = VIEWS.home;
   VIEWS.advertise = VIEWS.home;
+  // The surrounding app holds the login and the record: hide the consumer site's "log in to keep your record"
+  document.head.insertAdjacentHTML("beforeend", '<style>#hero-login, .save-pill[data-action="login"] { display: none !important; }</style>');
 
   // app.js calls, for each answered question: recordSpeed (drill only) -> recordChoice -> recordCategory
   var last = { qid: null, mode: null, secs: null };
