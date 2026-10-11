@@ -32,8 +32,9 @@ export async function createLiveBackend(url: string, key: string): Promise<Backe
     const { data, error } = await sb.functions.invoke(name, { body });
     if (error) {
       // Surface the function's own error message when there is one
-      const ctx = (error as { context?: Response }).context;
-      const msg = ctx ? await ctx.json().then((j) => j.error).catch(() => null) : null;
+      // (a network or CORS failure has no Response here)
+      const ctx = (error as { context?: unknown }).context;
+      const msg = ctx instanceof Response ? await ctx.json().then((j) => j.error).catch(() => null) : null;
       throw new Error(msg || error.message);
     }
     return data as T;

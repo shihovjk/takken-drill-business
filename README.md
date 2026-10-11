@@ -122,7 +122,7 @@ npm run dev   # http://localhost:5180
 ### Full setup (real AI + PayPal sandbox)
 
 1. **Supabase project.** Create one, then run `supabase link` and `supabase db push`. This applies [`supabase/migrations`](supabase/migrations).
-2. **Edge Function secrets.** Copy [`supabase/functions/.env.example`](supabase/functions/.env.example) to `supabase/functions/.env`, fill it in, then run `supabase secrets set --env-file supabase/functions/.env`.
+2. **Edge Function secrets.** Copy [`supabase/functions/.env.example`](supabase/functions/.env.example) to `supabase/functions/.env`, fill it in, then run `supabase secrets set --env-file supabase/functions/.env`. `ALLOWED_ORIGINS` must list every URL the frontend is served from, or the browser blocks the function calls (CORS).
 3. **Deploy the functions.** Run `supabase functions deploy`. `paypal-webhook` and `demo-refresh` run without JWT verification (see [`supabase/config.toml`](supabase/config.toml)).
 4. **PayPal sandbox** ([developer.paypal.com](https://developer.paypal.com)):
    - **This app's REST app:** enable *Log in with PayPal* (email + PayPal account ID). Create a product and a monthly plan, and set `PAYPAL_PLAN_ID`. Add a webhook to `…/functions/v1/paypal-webhook` for `BILLING.SUBSCRIPTION.*` and `PAYMENT.SALE.COMPLETED`, and set `PAYPAL_WEBHOOK_ID`.
