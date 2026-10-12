@@ -61,6 +61,9 @@ export type Session = { userId: string; role: Role; name: string; nameEn: string
 
 export type PayoutRecord = { id: string; at: string; total: number; currency: string; count: number; provider: string; status: string };
 
+// The app's monthly fee: PayPal bills unit_price x quantity (employees)
+export type SubscriptionStatus = { status: string; next_billing_at?: string | null; quantity?: number | null; unit_price?: number | null; pending_quantity?: number | null; approve_url?: string | null };
+
 export type Message = { body: string; createdAt: string };
 
 export type MyView = {
@@ -95,8 +98,8 @@ export interface Backend {
   invite(i: { email: string; name: string; department: string }): Promise<{ link: string; emailed: boolean }>;
   paypalStatus(): Promise<{ connected: boolean; merchantEmail?: string | null; balance?: number | null }>;
   connectCompanyPayPal(clientId: string, secret: string): Promise<void>;
-  subscription(): Promise<{ status: string; next_billing_at?: string | null }>;
-  subscriptionConfig(): Promise<{ clientId: string; planId: string; companyId: string } | null>;
+  subscription(): Promise<SubscriptionStatus>;
+  subscriptionConfig(): Promise<{ clientId: string; planId: string; companyId: string; seats: number; unitPrice: number } | null>;
   activateSubscription(subscriptionId: string): Promise<void>;
   resetDemo(): Promise<void>;
 

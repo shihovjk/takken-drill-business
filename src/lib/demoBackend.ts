@@ -169,7 +169,7 @@ export async function createDemoBackend(): Promise<Backend> {
     async invite(i) { await wait(300); return { link: `${location.origin}/?invite=demo-${encodeURIComponent(i.email)}`, emailed: true }; },
     async paypalStatus() { return { connected: true, merchantEmail: "hr@mirai-realty.example.com" }; },
     async connectCompanyPayPal() { await wait(500); },
-    async subscription() { return { status: "active", next_billing_at: new Date(LOADED_AT + 20 * 86_400_000).toISOString() }; },
+    async subscription() { return { status: "active", next_billing_at: new Date(LOADED_AT + 20 * 86_400_000).toISOString(), quantity: employees.length, unit_price: 500 }; },
     async subscriptionConfig() { return null; },
     async activateSubscription() {},
     async resetDemo() { resetDemo(); },

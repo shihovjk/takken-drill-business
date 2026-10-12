@@ -180,6 +180,10 @@ create table public.subscriptions (
   paypal_subscription_id text unique,
   plan_id text,
   status text not null default 'none',
+  quantity integer,   -- employees billed (PayPal bills unit_price x quantity)
+  unit_price integer,
+  pending_quantity integer, -- quantity change waiting for the admin's approval on PayPal
+  approve_url text,
   next_billing_at timestamptz,
   updated_at timestamptz not null default now()
 );

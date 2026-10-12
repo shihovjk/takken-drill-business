@@ -1,0 +1,13 @@
+# Keeps each company's billed quantity (PayPal subscription) equal to its employee count.
+name: seat sync
+on:
+  schedule:
+    - cron: "30 18 * * *" # 03:30 JST every day
+  workflow_dispatch:
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -fsS -X POST "${{ secrets.SUPABASE_URL }}/functions/v1/seat-sync" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" -H "content-type: application/json" -d '{}'

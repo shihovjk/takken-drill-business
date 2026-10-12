@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.demo-refresh]
 verify_jwt = false
+
+[functions.seat-sync]
+verify_jwt = false

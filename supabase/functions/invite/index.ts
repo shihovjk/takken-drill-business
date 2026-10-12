@@ -2,6 +2,7 @@
 //   { action: "create", email, name, department?, role? } (admin): sends Supabase's invite email
 //   { action: "accept", token }                         (the invited user, after signing in)
 import { caller, HttpError, serve } from "../_shared/http.ts";
+import { syncSeats } from "../_shared/seats.ts";
 
 serve(async (req, body, db) => {
   if (body.action === "create") {
@@ -29,6 +30,8 @@ serve(async (req, body, db) => {
     if (inv.email !== user.email?.toLowerCase()) throw new HttpError(403, "this invitation is for another email address");
     await db.from("company_members").upsert({ company_id: inv.company_id, user_id: user.id, role: inv.role, display_name: inv.display_name, department: inv.department });
     await db.from("invitations").update({ accepted_at: new Date().toISOString() }).eq("id", inv.id);
+    // A new employee changes the billed quantity; joining must not fail because of PayPal
+    if (inv.role === "employee") await syncSeats(db, inv.company_id).catch((e) => console.error(e));
     return { companyId: inv.company_id };
   }
   throw new HttpError(400, "action");

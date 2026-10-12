@@ -87,7 +87,8 @@ Supabase Edge Functions (Deno)
    paypal-webhook   payout + subscription events
    paypal-connect   company connects its own PayPal app (secret stored AES-GCM encrypted)
    paypal-identity  Log in with PayPal for employees
-   subscription     monthly fee (PayPal Subscriptions)
+   subscription     monthly fee per employee (PayPal Subscriptions)
+   seat-sync        daily: billed quantity follows the employee count
    invite           invite employees
    demo-refresh     keeps the public demo current
 ```
@@ -125,7 +126,7 @@ npm run dev   # http://localhost:5180
 2. **Edge Function secrets.** Copy [`supabase/functions/.env.example`](supabase/functions/.env.example) to `supabase/functions/.env`, fill it in, then run `supabase secrets set --env-file supabase/functions/.env`. `ALLOWED_ORIGINS` must list every URL the frontend is served from, or the browser blocks the function calls (CORS).
 3. **Deploy the functions.** Run `supabase functions deploy`. `paypal-webhook` and `demo-refresh` run without JWT verification (see [`supabase/config.toml`](supabase/config.toml)).
 4. **PayPal sandbox** ([developer.paypal.com](https://developer.paypal.com)):
-   - **This app's REST app:** enable *Log in with PayPal* (email + PayPal account ID). Create a product and a monthly plan, and set `PAYPAL_PLAN_ID`. Add a webhook to `…/functions/v1/paypal-webhook` for `BILLING.SUBSCRIPTION.*` and `PAYMENT.SALE.COMPLETED`, and set `PAYPAL_WEBHOOK_ID`.
+   - **This app's REST app:** enable *Log in with PayPal* (email + PayPal account ID). Create a product and a monthly per-employee plan (`quantity_supported: true`, e.g. 500 JPY; PayPal bills price × employees), and set `PAYPAL_PLAN_ID`. Add a webhook to `…/functions/v1/paypal-webhook` for `BILLING.SUBSCRIPTION.*` and `PAYMENT.SALE.COMPLETED`, and set `PAYPAL_WEBHOOK_ID`.
    - **The company's REST app:** this can be a second sandbox business account with *Payouts* enabled. Enter its client ID and secret in the app under **PayPal**. The payout webhook is registered automatically.
 5. **Demo data.** Copy `.env.example` to `.env`, fill it in, and run `node scripts/seed.ts --supabase`. `DEMO_PAYEE_EMAIL` is a sandbox *personal* account that receives the demo payouts.
 6. **Frontend.** Set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` and `VITE_PAYPAL_CLIENT_ID`, then run `npm run build` and deploy `dist/` as static files (the live demo uses Cloudflare Workers connected to this repository; build command `npm run build`, output `dist`, `NODE_VERSION=22`).

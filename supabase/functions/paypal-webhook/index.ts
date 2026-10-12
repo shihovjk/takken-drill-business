@@ -55,9 +55,11 @@ Deno.serve(async (req) => {
   } else if (ev.event_type.startsWith("BILLING.SUBSCRIPTION.")) {
     // custom_id carries our company id (set when the subscription was created in the browser)
     await db.from("subscriptions").upsert({
-      company_id: r.custom_id, paypal_subscription_id: r.id, plan_id: r.plan_id, status: String(r.status ?? "").toLowerCase(),
+      company_id: r.custom_id, paypal_subscription_id: r.id, plan_id: r.plan_id, status: String(r.status ?? "").toLowerCase(), quantity: Number(r.quantity ?? 1),
       next_billing_at: r.billing_info?.next_billing_time ?? null, updated_at: now,
     });
+    // An approved quantity change has arrived
+    await db.from("subscriptions").update({ pending_quantity: null, approve_url: null }).eq("company_id", r.custom_id).eq("pending_quantity", Number(r.quantity ?? 1));
   } else if (ev.event_type === "PAYMENT.SALE.COMPLETED" && r.billing_agreement_id) {
     await db.from("subscriptions").update({ status: "active", updated_at: now }).eq("paypal_subscription_id", r.billing_agreement_id);
   }

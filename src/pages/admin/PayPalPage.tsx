@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "../../i18n";
-import type { Backend } from "../../lib/types";
+import type { Backend, SubscriptionStatus } from "../../lib/types";
 import type { AdminData } from "./AdminApp";
 
 export default function PayPalPage({ backend, data, notify }: { backend: Backend; data: AdminData; notify: (m: string) => void }) {
   const { t, pick, yen } = useI18n();
   const [conn, setConn] = useState<{ connected: boolean; merchantEmail?: string | null; balance?: number | null } | null>(null);
-  const [sub, setSub] = useState<{ status: string; next_billing_at?: string | null } | null>(null);
+  const [sub, setSub] = useState<SubscriptionStatus | null>(null);
   const [form, setForm] = useState({ clientId: "", secret: "" });
   const [busy, setBusy] = useState(false);
   const load = () => { backend.paypalStatus().then(setConn).catch(() => setConn({ connected: false })); backend.subscription().then(setSub).catch(() => setSub({ status: "none" })); };
@@ -38,6 +38,13 @@ export default function PayPalPage({ backend, data, notify }: { backend: Backend
       </div>
       <div className="card">
         <h2>{t("ppSub")}{sub?.status === "active" && <span className="badge b-paid">{t("ppSubActive")}</span>}</h2>
+        {sub?.quantity != null && sub.unit_price != null && <p style={{ margin: "0 0 6px" }}>{yen(sub.unit_price)} × {sub.quantity}{t("people")} = <b>{yen(sub.unit_price * sub.quantity)}</b>{pick("／月", " / month")}</p>}
+        {sub?.pending_quantity != null && sub.approve_url && (
+          <div className="row" style={{ margin: "0 0 8px" }}>
+            <span>{pick(`社員数が${sub.pending_quantity}人に変わりました。PayPalで承認すると、次回から${yen((sub.unit_price ?? 0) * sub.pending_quantity)}／月になります。`, `Your employee count is now ${sub.pending_quantity}. Approve on PayPal to pay ${yen((sub.unit_price ?? 0) * sub.pending_quantity)} / month from the next billing.`)}</span>
+            <a className="btn primary" href={sub.approve_url}>{pick("PayPalで承認する", "Approve on PayPal")}</a>
+          </div>
+        )}
         {sub?.next_billing_at && <p className="muted" style={{ margin: 0 }}>{pick("次回のお支払い", "Next billing")}：{new Date(sub.next_billing_at).toLocaleDateString()}</p>}
         {sub && sub.status !== "active" && <SubscribeButton backend={backend} onDone={load} />}
       </div>
@@ -57,13 +64,16 @@ export default function PayPalPage({ backend, data, notify }: { backend: Backend
 // PayPal's own subscription button (JS SDK). The plan is the app's monthly fee; custom_id ties it to the company.
 type PayPalButtons = { Buttons: (o: object) => { render: (el: HTMLElement) => Promise<void> } };
 function SubscribeButton({ backend, onDone }: { backend: Backend; onDone: () => void }) {
+  const { t, pick, yen } = useI18n();
   const box = useRef<HTMLDivElement>(null);
   const [msg, setMsg] = useState("");
+  const [price, setPrice] = useState<{ seats: number; unitPrice: number } | null>(null);
   useEffect(() => {
     let gone = false;
     backend.subscriptionConfig().then((cfg) => {
       if (gone) return; // React runs effects twice in development; only the live one renders
       if (!cfg?.clientId || !cfg.planId) { setMsg("PAYPAL_PLAN_ID is not set"); return; }
+      setPrice(cfg);
       const s = document.createElement("script");
       s.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(cfg.clientId)}&vault=true&intent=subscription`;
       s.onload = () => {
@@ -72,7 +82,7 @@ function SubscribeButton({ backend, onDone }: { backend: Backend; onDone: () => 
         pp.Buttons({
           style: { label: "subscribe" },
           createSubscription: (_d: unknown, actions: { subscription: { create: (o: object) => Promise<string> } }) =>
-            actions.subscription.create({ plan_id: cfg.planId, custom_id: cfg.companyId }),
+            actions.subscription.create({ plan_id: cfg.planId, quantity: String(cfg.seats), custom_id: cfg.companyId }),
           onApprove: async (d: { subscriptionID: string }) => { await backend.activateSubscription(d.subscriptionID); onDone(); },
         }).render(box.current);
       };
@@ -80,5 +90,7 @@ function SubscribeButton({ backend, onDone }: { backend: Backend; onDone: () => 
     }).catch((e) => setMsg(String(e.message ?? e)));
     return () => { gone = true; };
   }, [backend, onDone]);
-  return <><div ref={box} style={{ maxWidth: 320 }} />{msg && <p className="muted">{msg}</p>}</>;
+  return <>
+    {price && <p style={{ margin: "0 0 10px" }}>{pick("社員1人あたり", "Per employee: ")}{yen(price.unitPrice)} × {price.seats}{t("people")} = <b>{yen(price.unitPrice * price.seats)}</b>{pick("／月", " / month")}</p>}
+    <div ref={box} style={{ maxWidth: 320 }} />{msg && <p className="muted">{msg}</p>}</>;
 }
