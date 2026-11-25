@@ -7,7 +7,7 @@ const OPERATOR = {
   name: "宅建過去問ドリル 運営者",
   owner: "川喜多 史帆", // 販売事業者（個人事業者の氏名）・運営責任者
   disclose: "請求があった場合には遅滞なく開示いたします",
-  email: "support@takken-drill.com",
+  email: "takkendrill@gmail.com",
   phone: "050-6870-5742", // 事業用（My 050）。Stripe の「サポート部門の電話番号」と同じ
 };
 const LEGAL_UPDATED = "2026年10月6日";
@@ -167,7 +167,7 @@ function renderContact() {
 }
 
 // ---------- お問い合わせの送信 ----------
-// Supabase の Edge Function「contact」に送り、内容の保存と support@ へのメールを行う（リポジトリの supabase/functions/contact）
+// Supabase の Edge Function「contact」に送り、内容の保存と takkendrill@gmail.com へのメールを行う（リポジトリの supabase/functions/contact）
 // 人には見えない欄。自動で何でも入力するロボットだけが埋めるので、埋まっていたら迷惑な送信とみなす
 const honeypot = () => `<label class="hp" aria-hidden="true">ウェブサイト<input name="website" tabindex="-1" autocomplete="off"></label>`;
 
